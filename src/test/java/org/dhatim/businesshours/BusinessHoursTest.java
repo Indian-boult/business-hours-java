@@ -172,11 +172,14 @@ public class BusinessHoursTest {
     
         // Friday 11 PM (business should be open)
         assertEquals(bh.isOpen(LocalDateTime.parse("2024-04-12T23:00:00")), true);
-
+    
         // Saturday 1 AM (business should be open, overnight hours from Friday)
         assertEquals(bh.isOpen(LocalDateTime.parse("2024-04-13T01:00:00")), true);
-
+    
+        // Saturday 6:30 AM (business should be closed)
+        assertEquals(bh.isOpen(LocalDateTime.parse("2024-04-13T06:30:00")), false);
     }
+    
     
     
 
