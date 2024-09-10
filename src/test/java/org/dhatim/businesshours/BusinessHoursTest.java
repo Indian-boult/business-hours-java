@@ -160,4 +160,32 @@ public class BusinessHoursTest {
         BusinessHoursParser.parse(null);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidWeekDayFormat() {
+        // This should throw an exception because "abc" is not a valid weekday
+     BusinessHours bh = new BusinessHours("wday {abc} hr {9-18}");
+    }
+
+    @Test
+    public void overnightBusinessHours() {
+        BusinessHours bh = new BusinessHours("wday {Fri} hr {10pm-2am}, wday {Sat} hr {12am-6am}");
+    
+        // Friday 11 PM (business should be open)
+        assertEquals(bh.isOpen(LocalDateTime.parse("2024-04-12T23:00:00")), true);
+
+        // Saturday 1 AM (business should be open, overnight hours from Friday)
+        assertEquals(bh.isOpen(LocalDateTime.parse("2024-04-13T01:00:00")), true);
+
+    }
+    
+    
+
+    @Test
+    public void businessAlwaysOpen() {
+    BusinessHours bh = new BusinessHours("");
+    // Business should be open at any time
+    assertEquals(bh.isOpen(LocalDateTime.parse("2024-04-22T00:00:00")), true);
+    assertEquals(bh.isOpen(LocalDateTime.parse("2024-04-22T23:59:59")), true);
+    } 
+
 }
