@@ -76,28 +76,28 @@ class BusinessHoursParser {
 
     private static int hourStringToInt(String hour) {
         try {
-            // if the hour is in 24h format
+            // Try parsing as 24-hour format first
             return Integer.parseInt(hour);
         } catch (NumberFormatException e) {
+            // Fallback to handling 12-hour format
             Matcher matcher = TWELVE_HOURS_TIME_PATTERN.matcher(hour);
             if (matcher.matches()) {
-                // 12 hours format
                 int result = Integer.parseInt(matcher.group(1));
-                String dayHalf = matcher.group(2);
-                if ("am".equals(dayHalf) && result == 12) {
-                    // 12am = midnight
-                    result = 0;
-                } else if ("pm".equals(dayHalf) && result != 12) {
-                    // add 12 hours in the afternoon to convert in 24 hours format
-                    // (except for 12pm which is noon)
-                    result += 12;
+                String period = matcher.group(2).toLowerCase();
+                if ("am".equals(period) && result == 12) {
+                    // 12am is midnight (00:00)
+                    return 0;
+                } else if ("pm".equals(period) && result != 12) {
+                    // Add 12 hours for PM times except for 12pm
+                    return result + 12;
                 }
-                return result;
+                return result; // 12pm is already correct as 12
             } else {
                 throw new IllegalArgumentException("Invalid hour format: " + hour);
             }
         }
     }
+            
 
     private static int weekDayStringToInt(String weekDay) {
         int result;

@@ -61,8 +61,17 @@ public class BusinessPeriod {
      * @return true if the temporal is included in this period, false otherwise.
      */
     public boolean isInPeriod(Temporal temporal) {
-        return start.compareTo(temporal) <= 0 && end.compareTo(temporal) >= 0;
+        if (start.compareTo(end) <= 0) {
+            // Normal case: period is within the same day
+            return start.compareTo(temporal) <= 0 && end.compareTo(temporal) >= 0;
+        } else {
+            // Case: period spans across midnight (e.g., 10pm-2am)
+            // Either the time is after the start on the first day or before the end on the next day
+            return start.compareTo(temporal) <= 0 || end.compareTo(temporal) >= 0;
+        }
     }
+    
+    
 
     /**
      * Gives the amount of time between the given temporal and the next opening of this period.
