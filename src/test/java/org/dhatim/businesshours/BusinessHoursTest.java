@@ -160,4 +160,34 @@ public class BusinessHoursTest {
         BusinessHoursParser.parse(null);
     }
 
+    @Test
+    public void testIsAlwaysOpen() {
+        // Case when business is always open (empty string)
+        BusinessHours bhAlwaysOpen = new BusinessHours("");
+        assertEquals(true, bhAlwaysOpen.isAlwaysOpen());
+
+        // Case when business is open only at specific times (Mon-Fri, 9am-5pm)
+        BusinessHours bhNotAlwaysOpen = new BusinessHours("wd {Mon-Fri} hr {9am-5pm}");
+        assertEquals(false, bhNotAlwaysOpen.isAlwaysOpen());
+
+        // Case when business has a period that wraps around (not truly always open)
+        BusinessHours bh24x7 = new BusinessHours("wd {Mon-Sun} hr {12am-11pm}");
+        assertEquals(false, bh24x7.isAlwaysOpen());
+    }
+
+    @Test
+    public void testGetBusinessHoursSummary() {
+        // Case when business is always open (empty string)
+        BusinessHours bhAlwaysOpen = new BusinessHours("");
+        assertEquals("Open 24/7", bhAlwaysOpen.getBusinessHoursSummary());
+
+        // Case when business is open from Mon 9am to Fri 5pm
+        BusinessHours bhMonToFri = new BusinessHours("wd {Mon-Fri} hr {9am-5pm}");
+        assertEquals("Mon 9am to Fri 5pm", bhMonToFri.getBusinessHoursSummary());
+
+        // Case when business is open with separate periods (not merging them)
+        BusinessHours bhSeparatePeriods = new BusinessHours("wd {Mon Tue Wed Thu Fri} hr {9am-5pm}");
+        assertEquals("Mon 9am to Fri 5pm", bhSeparatePeriods.getBusinessHoursSummary());
+    }
+
 }
