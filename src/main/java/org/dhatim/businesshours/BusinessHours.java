@@ -15,9 +15,16 @@
  */
 package org.dhatim.businesshours;
 
+import java.time.DayOfWeek;
+import java.time.format.TextStyle;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -130,6 +137,16 @@ public class BusinessHours {
     }
 
     /**
+     * Check if the business is always open.
+     *
+     * @return true if the business is always open, false otherwise
+     */
+    public boolean isAlwaysOpen() {
+        // If the stringValue is empty, it means the business is open 24/7
+        return stringValue.trim().isEmpty();
+    }
+
+    /**
      * Get the time between the given temporal and the next business opening.
      *
      * @param temporal the temporal from which to compute the time before next
@@ -143,6 +160,83 @@ public class BusinessHours {
                 .mapToLong(period -> period.timeBeforeOpening(temporal, unit))
                 .min()
                 .getAsLong();
+    }
+
+    /**
+     * Get a human-readable summary of the business hours.
+     *
+     * @return a string summary of business hours.
+     */
+    public String getBusinessHoursSummary() {
+        if (isAlwaysOpen()) {
+            return "Open 24/7";
+        }
+
+        StringBuilder summary = new StringBuilder();
+        List<BusinessPeriod> sortedPeriods = new ArrayList<>(periods);
+        sortedPeriods.sort(Comparator.comparing(BusinessPeriod::getStart)); // Ensure periods are sorted
+
+        BusinessPeriod current = null;
+        BusinessPeriod last = null;
+
+        for (BusinessPeriod period : sortedPeriods) {
+            if (current == null) {
+                current = period;
+                last = period;
+            } else if (canMergePeriods(last, period)) {
+                last = period;
+            } else {
+                appendPeriod(summary, current, last);
+                current = period;
+                last = period;
+            }
+        }
+
+        if (current != null) {
+            appendPeriod(summary, current, last);
+        }
+
+        // Remove trailing comma and space if present
+        if (summary.length() > 0 && summary.charAt(summary.length() - 2) == ',') {
+            summary.setLength(summary.length() - 2);
+        }
+
+        return summary.toString();
+    }
+
+    /**
+     * Check if two business periods can be merged (i.e., they are on consecutive days and have the same hours).
+     */
+    private boolean canMergePeriods(BusinessPeriod current, BusinessPeriod next) {
+        // Check if the periods are on consecutive days with the same start and end hours
+        return current.getEnd().get(ChronoField.HOUR_OF_DAY) == next.getEnd().get(ChronoField.HOUR_OF_DAY)
+                && current.getStart().get(ChronoField.HOUR_OF_DAY) == next.getStart().get(ChronoField.HOUR_OF_DAY)
+                && current.getEnd().get(ChronoField.DAY_OF_WEEK) + 1 == next.getStart().get(ChronoField.DAY_OF_WEEK);
+    }
+
+    /**
+     * Helper method to append a business period to the summary.
+     */
+    private void appendPeriod(StringBuilder summary, BusinessPeriod start, BusinessPeriod end) {
+        String startPeriod = formatTemporal(start.getStart());
+        String endPeriod = formatTemporal(end.getEnd());
+        summary.append(startPeriod).append(" to ").append(endPeriod).append(", ");
+    }
+
+    /**
+     * Helper method to format a BusinessTemporal instance into a readable string.
+     */
+    private String formatTemporal(BusinessTemporal temporal) {
+        // Get the day of the week
+        int dayOfWeek = temporal.get(ChronoField.DAY_OF_WEEK);
+        String dayString = DayOfWeek.of(dayOfWeek).getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+
+        // Get the hour of the day
+        int hour = temporal.get(ChronoField.HOUR_OF_DAY);
+        String period = (hour < 12) ? "am" : "pm";
+        int adjustedHour = (hour % 12 == 0) ? 12 : hour % 12; // Adjust for 12-hour format
+
+        return dayString + " " + adjustedHour + period;
     }
 
     /**
