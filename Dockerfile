@@ -31,3 +31,11 @@ RUN mvn clean test
 
 # Set the default command
 CMD ["mvn", "clean", "install"]
+
+WORKDIR /app
+# Copy the run_tests.sh script to the root of the container
+COPY run_tests.sh /run_tests.sh
+
+# Make the script executable
+RUN chmod +x /run_tests.sh
+ENTRYPOINT ["/bin/bash", "-s"]
